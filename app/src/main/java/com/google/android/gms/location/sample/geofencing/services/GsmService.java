@@ -1,9 +1,13 @@
 package com.google.android.gms.location.sample.geofencing.services;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -11,14 +15,19 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.telephony.NeighboringCellInfo;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 
 import com.google.android.gms.location.sample.geofencing.Constants;
+import com.google.android.gms.location.sample.geofencing.MainActivity;
+import com.google.android.gms.location.sample.geofencing.R;
 import com.google.android.gms.location.sample.geofencing.listener.MyPhoneStateListener;
 import com.google.android.gms.location.sample.geofencing.utils.UtilityMethods;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -30,6 +39,8 @@ public class GsmService extends Service {
     public static TelephonyManager p_TelephonyManager = null;
     public static MyPhoneStateListener p_myPhoneStateListener = null;
     private SharedPreferences sharedPreferences;
+    private Integer [] home = {9606, 9607, 56152, 39946, 57274, 56153};
+    private Integer [] ofc = {10087, 10086, 14716, 53892};
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -51,7 +62,7 @@ public class GsmService extends Service {
         pPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         final LocationManager locationManager = (LocationManager)
                 getSystemService(Context.LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000 * 10, 0, new LocationListener() {
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000 * 60 *2  , 400, new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
                 List<NeighboringCellInfo> list=p_TelephonyManager.getNeighboringCellInfo();
@@ -59,6 +70,12 @@ public class GsmService extends Service {
                 if(list != null){
                     for (NeighboringCellInfo info: list){
                         nInfo.append("NCide"+info.getCid()+" lac"+info.getLac()+"\n");
+                        if(Arrays.asList(home).contains(info.getCid())){
+                            sendNotification("Reached home at:"+UtilityMethods.getDateTime());
+                        }
+                        if(Arrays.asList(ofc).contains(info.getCid())){
+                            sendNotification("Reached ofc at:"+UtilityMethods.getDateTime());
+                        }
                     }
                 }
                 SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -96,4 +113,48 @@ public class GsmService extends Service {
             pWakeLock = null;
         }
     }
+    private void sendNotification(String notificationDetails) {
+        // Create an explicit content Intent that starts the main Activity.
+        Intent notificationIntent = new Intent(getApplicationContext(), MainActivity.class);
+
+        // Construct a task stack.
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+
+        // Add the main Activity to the task stack as the parent.
+        stackBuilder.addParentStack(MainActivity.class);
+
+        // Push the content Intent onto the stack.
+        stackBuilder.addNextIntent(notificationIntent);
+
+        // Get a PendingIntent containing the entire back stack.
+        PendingIntent notificationPendingIntent =
+                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        // Get a notification builder that's compatible with platform versions >= 4
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+
+        // Define the notification settings.
+        builder.setSmallIcon(R.drawable.ic_launcher)
+                // In a real app, you may want to use a library like Volley
+                // to decode the Bitmap.
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(),
+                        R.drawable.ic_launcher))
+                .setColor(Color.RED)
+                .setContentTitle(notificationDetails)
+                .setContentText(notificationDetails)
+                .setContentIntent(notificationPendingIntent)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(notificationDetails));
+
+        // Dismiss notification once the user touches it.
+        builder.setAutoCancel(true);
+
+        // Get an instance of the Notification manager
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // Issue the notification
+        mNotificationManager.notify(0, builder.build());
+    }
+
 }
