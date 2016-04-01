@@ -480,6 +480,7 @@ public class MainActivity extends ActionBarActivity implements
         }
     }
 
+
     /**
      * Removes geofences, which stops further notifications when the device enters or exits
      * previously registered geofences.

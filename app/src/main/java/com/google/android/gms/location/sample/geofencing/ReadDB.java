@@ -1,6 +1,7 @@
 package com.google.android.gms.location.sample.geofencing;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -128,6 +129,12 @@ public class ReadDB extends Activity {
     public void onClick(View v){
         db.setText("");
         int id = v.getId();
+        if(id == R.id.readPref){
+            db.setText("");
+            SharedPreferences prefs = getSharedPreferences(Constants.MY_PREF, MODE_PRIVATE);
+            db.setText(prefs.getString(Constants.PREF_NAME, "not avl"));
+            return;
+        }
 
             readNetworkDetails(id);
     }
