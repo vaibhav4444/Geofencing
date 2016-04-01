@@ -1,5 +1,7 @@
 package com.google.android.gms.location.sample.geofencing.listener;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Environment;
 import android.telephony.CellLocation;
 import android.telephony.PhoneStateListener;
@@ -9,6 +11,7 @@ import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.location.sample.geofencing.Constants;
 import com.google.android.gms.location.sample.geofencing.GeoFenceApp;
 import com.google.android.gms.location.sample.geofencing.database.DataSource;
 import com.google.android.gms.location.sample.geofencing.utils.LocationUtility;
@@ -97,7 +100,10 @@ public class MyPhoneStateListener extends PhoneStateListener {
         int cid = 0;
         int lac = 0;
         int psc= 0 ;
-
+        SharedPreferences sharedPreferences = GeoFenceApp.getInstance().getSharedPreferences(Constants.MY_PREF, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(Constants.PREF_CALLEd, "Called at:"+UtilityMethods.getDateTime());
+        editor.commit();
         if (location != null) {
             if (location instanceof GsmCellLocation) {
                 cid = ((GsmCellLocation) location).getCid();

@@ -29,6 +29,7 @@ public final class Constants {
     }
     public static final String MY_PREF = "mypref";
     public static final String PREF_NAME = "prefName";
+    public static final String PREF_CALLEd = "prefCalled";
     public static final String PACKAGE_NAME = "com.google.android.gms.location.Geofence";
 
     public static final String SHARED_PREFERENCES_NAME = PACKAGE_NAME + ".SHARED_PREFERENCES_NAME";

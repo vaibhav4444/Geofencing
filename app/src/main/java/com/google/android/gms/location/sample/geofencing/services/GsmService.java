@@ -16,7 +16,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 
 import com.google.android.gms.location.sample.geofencing.Constants;
-import com.google.android.gms.location.sample.geofencing.MyPhoneStateListener;
+import com.google.android.gms.location.sample.geofencing.listener.MyPhoneStateListener;
 import com.google.android.gms.location.sample.geofencing.utils.UtilityMethods;
 
 import java.util.List;
@@ -51,7 +51,7 @@ public class GsmService extends Service {
         pPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         final LocationManager locationManager = (LocationManager)
                 getSystemService(Context.LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000, 0, new LocationListener() {
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000 * 10, 0, new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
                 List<NeighboringCellInfo> list=p_TelephonyManager.getNeighboringCellInfo();

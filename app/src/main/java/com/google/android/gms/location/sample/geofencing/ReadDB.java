@@ -132,7 +132,7 @@ public class ReadDB extends Activity {
         if(id == R.id.readPref){
             db.setText("");
             SharedPreferences prefs = getSharedPreferences(Constants.MY_PREF, MODE_PRIVATE);
-            db.setText(prefs.getString(Constants.PREF_NAME, "not avl"));
+            db.setText(prefs.getString(Constants.PREF_NAME, "not avl")+" listener result: "+prefs.getString(Constants.PREF_CALLEd,"not called"));
             return;
         }
 
