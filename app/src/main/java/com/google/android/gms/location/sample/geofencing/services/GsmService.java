@@ -21,6 +21,11 @@ import android.telephony.NeighboringCellInfo;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.sample.geofencing.Constants;
 import com.google.android.gms.location.sample.geofencing.MainActivity;
 import com.google.android.gms.location.sample.geofencing.R;
@@ -33,7 +38,7 @@ import java.util.List;
 /**
  * Created by vaibhav.singhal on 4/1/2016.
  */
-public class GsmService extends Service {
+public class GsmService extends Service implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
     private PowerManager pPowerManager = null;
     private PowerManager.WakeLock pWakeLock = null;
     public static TelephonyManager p_TelephonyManager = null;
@@ -41,12 +46,17 @@ public class GsmService extends Service {
     private SharedPreferences sharedPreferences;
     private Integer [] home = {9606, 9607, 56152, 39946, 57274, 56153};
     private Integer [] ofc = {10087, 10086, 14716, 53892};
+    private GoogleApiClient mGoogleApiClient;
+    private Location mLastLocation;
+    private LocationRequest mLocationRequest;
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
 
+    // this method is called everytime when any component call startService
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         sharedPreferences = getSharedPreferences(Constants.MY_PREF, Context.MODE_PRIVATE);
@@ -55,12 +65,30 @@ public class GsmService extends Service {
         p_TelephonyManager.listen(p_myPhoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
         return START_STICKY;
     }
+    @Override
+    public void onConnected(Bundle bundle) {
+        startLocationUpdates();
+    }
 
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+    }
+    // called when activity is created.
     @Override
     public void onCreate() {
         super.onCreate();
         pPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        final LocationManager locationManager = (LocationManager)
+        if (checkGooglePlayServices()) {
+            buildGoogleApiClient();
+        }
+        createLocationRequest();
+        /*final LocationManager locationManager = (LocationManager)
                 getSystemService(Context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000 * 60 *2  , 400, new LocationListener() {
             @Override
@@ -100,7 +128,11 @@ public class GsmService extends Service {
             public void onProviderDisabled(String s) {
 
             }
-        });
+        }); */
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.connect();
+        }
+
         pWakeLock = pPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "No sleep");
         pWakeLock.acquire();
     }
@@ -155,6 +187,67 @@ public class GsmService extends Service {
 
         // Issue the notification
         mNotificationManager.notify(0, builder.build());
+    }
+    private boolean checkGooglePlayServices(){
+        int checkGooglePlayServices = GooglePlayServicesUtil
+                .isGooglePlayServicesAvailable(this);
+        if (checkGooglePlayServices != ConnectionResult.SUCCESS) {
+		/*
+		* Google Play Services is missing or update is required
+		*  return code could be
+		* SUCCESS,
+		* SERVICE_MISSING, SERVICE_VERSION_UPDATE_REQUIRED,
+		* SERVICE_DISABLED, SERVICE_INVALID.
+		*/
+           // GooglePlayServicesUtil.getErrorDialog(checkGooglePlayServices,
+                    //this, REQUEST_CODE_RECOVER_PLAY_SERVICES).show();
+
+            return false;
+        }
+
+        return true;
+
+    }
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+    }
+    protected void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(20000);
+        mLocationRequest.setFastestInterval(5000);
+        //mLocationRequest.setSmallestDisplacement()
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+    }
+    protected void startLocationUpdates() {
+        LocationServices.FusedLocationApi.requestLocationUpdates(
+                mGoogleApiClient, mLocationRequest, new com.google.android.gms.location.LocationListener() {
+                    @Override
+                    public void onLocationChanged(Location location) {
+                        List<NeighboringCellInfo> list=p_TelephonyManager.getNeighboringCellInfo();
+                        StringBuffer nInfo = new StringBuffer();
+                        if(list != null){
+                            for (NeighboringCellInfo info: list){
+                                nInfo.append("NCide"+info.getCid()+" lac"+info.getLac()+"\n");
+                                if(Arrays.asList(home).contains(info.getCid())){
+                                    sendNotification("Reached home at:"+UtilityMethods.getDateTime());
+                                }
+                                if(Arrays.asList(ofc).contains(info.getCid())){
+                                    sendNotification("Reached ofc at:"+UtilityMethods.getDateTime());
+                                }
+                            }
+                        }
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        String prev = sharedPreferences.getString(Constants.PREF_NAME,"not avl");
+                        prev = prev+"\n"+"nInfo:"+nInfo.toString()+"  provider:"+location.getProvider()+" lat: "+location.getLatitude()+" long: "+location.getLongitude()+" speed:"+location.getSpeed()+" time"+ UtilityMethods.getDateTime()+"\n";
+                        editor.putString(Constants.PREF_NAME, prev);
+
+                        editor.commit();
+                    }
+                });
     }
 
 }

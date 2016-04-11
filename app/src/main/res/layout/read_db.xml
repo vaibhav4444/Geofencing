@@ -8,19 +8,29 @@
         android:orientation="horizontal">
         <Button
             android:id="@+id/readGeo"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text="Read Geofence"
             android:onClick="onClick"/>
         <Button
             android:id="@+id/readNetwork"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text="Read Network"
             android:onClick="onClick"/>
         <Button
             android:id="@+id/readAllCell"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Read allCell"
+            android:onClick="onClick"/>
+        <Button
+            android:id="@+id/readPref"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:text="Read allCell"
             android:onClick="onClick"/>
